@@ -2,6 +2,7 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = requi
 const qrcode = require('qrcode-terminal');
 
 let sock = null;
+let lastQr = null; // guarda o QR code mais recente pra exibir como imagem na rota /qr
 
 async function startWhatsApp(onMessage) {
   const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
@@ -13,8 +14,9 @@ async function startWhatsApp(onMessage) {
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update;
     if (qr) {
-      console.log('Escaneie o QR code abaixo com o WhatsApp da usuária:');
-      qrcode.generate(qr, { small: true });
+      lastQr = qr;
+      console.log('QR code atualizado. Abra /qr no navegador pra escanear como imagem.');
+      qrcode.generate(qr, { small: true }); // mantém também no log, como alternativa
     }
     if (connection === 'close') {
       const shouldReconnect =
@@ -22,6 +24,7 @@ async function startWhatsApp(onMessage) {
       console.log('Conexão fechada. Reconectar?', shouldReconnect);
       if (shouldReconnect) startWhatsApp(onMessage);
     } else if (connection === 'open') {
+      lastQr = null; // já conectou, não precisa mais mostrar QR
       console.log('WhatsApp conectado.');
     }
   });
@@ -51,4 +54,8 @@ async function sendMessage(to, text) {
   await sock.sendMessage(jid, { text });
 }
 
-module.exports = { startWhatsApp, sendMessage };
+function getLastQr() {
+  return lastQr;
+}
+
+module.exports = { startWhatsApp, sendMessage, getLastQr };

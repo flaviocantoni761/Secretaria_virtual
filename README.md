@@ -22,9 +22,9 @@ node src/scheduler.js  # em outro terminal/processo
 ```
 DATABASE_URL=postgres://...          # Railway fornece automaticamente
 ANTHROPIC_API_KEY=sk-ant-...
-TWILIO_ACCOUNT_SID=...
-TWILIO_AUTH_TOKEN=...
-TWILIO_PHONE_NUMBER=+1...
+NVOIP_CLIENT_ID=nvoip_...
+NVOIP_CLIENT_SECRET=...
+NVOIP_NUMBERSIP=...                  # seu ramal/número Nvoip (painel -> Configurações -> Usuários -> usuário SIP)
 ```
 
 ## Deploy no Railway
@@ -42,6 +42,10 @@ Por enquanto os contatos (pra "call_reminder") precisam ser inseridos direto no 
 INSERT INTO contacts (user_id, name, phone_number) VALUES (1, 'João', '+5511988887777');
 ```
 Dá pra evoluir isso depois pra ela cadastrar contatos pelo próprio WhatsApp ("salva o contato João, número tal").
+
+## Nota sobre a integração com a Nvoip
+
+O `src/calls.js` usa a API v2 da Nvoip (OAuth2 client_credentials) para criar ligações com texto-para-voz. A autenticação (obtenção do token) está confirmada e documentada oficialmente. Já os nomes exatos dos campos do endpoint `POST /v2/call` (`numbersip`, `called`, `text`, `voice`) foram inferidos a partir dos SDKs oficiais da Nvoip (PHP/Ruby) e podem precisar de ajuste fino no primeiro teste real — se a Nvoip devolver erro 400, a mensagem de erro costuma indicar qual parâmetro está incorreto, e é só ajustar o nome do campo em `calls.js`.
 
 ## Próximos passos sugeridos
 - Transcrição de áudio (Whisper API) antes de mandar pro `aiParser.js` — hoje só trata texto.
