@@ -8,7 +8,12 @@ const sentMessageIds = new Set(); // IDs das mensagens que a própria secretári
 async function startWhatsApp(onMessage) {
   const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
 
-  sock = makeWASocket({ auth: state });
+  sock = makeWASocket({
+    auth: state,
+    syncFullHistory: false,
+    shouldSyncHistoryMessage: () => false, // ignora sincronização de histórico de mensagens antigas
+    markOnlineOnConnect: false
+  });
 
   sock.ev.on('creds.update', saveCreds);
 
