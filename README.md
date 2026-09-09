@@ -43,6 +43,12 @@ INSERT INTO contacts (user_id, name, phone_number) VALUES (1, 'João', '+5511988
 ```
 Dá pra evoluir isso depois pra ela cadastrar contatos pelo próprio WhatsApp ("salva o contato João, número tal").
 
+## Como a secretária decide quando responder
+
+- No chat **"Mensagens para você mesmo"** (do número conectado), qualquer frase é processada normalmente.
+- Em conversas com outras pessoas, só processa mensagens que **comecem com a palavra "anota"** — isso evita que a secretária responda um simples "bom dia" ou "oi" de qualquer contato.
+- Áudio ainda não é transcrito (ver "Próximos passos sugeridos" abaixo) — por enquanto, a checagem da palavra "anota" só funciona em mensagens de texto.
+
 ## Nota sobre a integração com a Nvoip
 
 O `src/calls.js` usa a API v2 da Nvoip (OAuth2 client_credentials) para criar ligações com texto-para-voz. A autenticação (obtenção do token) está confirmada e documentada oficialmente. Já os nomes exatos dos campos do endpoint `POST /v2/call` (`numbersip`, `called`, `text`, `voice`) foram inferidos a partir dos SDKs oficiais da Nvoip (PHP/Ruby) e podem precisar de ajuste fino no primeiro teste real — se a Nvoip devolver erro 400, a mensagem de erro costuma indicar qual parâmetro está incorreto, e é só ajustar o nome do campo em `calls.js`.

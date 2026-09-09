@@ -43,18 +43,20 @@ async function startWhatsApp(onMessage) {
     const ownJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
     const isSelfChat = msg.key.remoteJid === ownJid;
 
-    // Mensagens enviadas por você mesmo só viram comando se forem no chat "Mensagens para você mesmo".
-    // Mensagens enviadas por outras pessoas (ex: outro usuário falando com esse número) continuam funcionando normalmente.
-    if (msg.key.fromMe && !isSelfChat) return;
-
     const from = msg.key.remoteJid.replace('@s.whatsapp.net', '');
     const text =
       msg.message.conversation ||
       msg.message.extendedTextMessage?.text ||
       null;
 
-    // Áudio: baixar e transcrever antes de chamar onMessage (ex: via Whisper API)
+    // Áudio: baixar e transcrever antes de comparar com a palavra-chave (ex: via Whisper API) — ainda não implementado
     if (!text) return;
+
+    // No chat "Mensagens para você mesmo", qualquer frase vira comando.
+    // Em conversas com outras pessoas, só processa se a mensagem começar com "anota"
+    // (assim não sai respondendo bom-dia/oi de quem te manda mensagem).
+    const startsWithAnota = /^\s*anota\b/i.test(text);
+    if (!isSelfChat && !startsWithAnota) return;
 
     await onMessage({ from, text });
   });
