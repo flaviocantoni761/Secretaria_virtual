@@ -3,6 +3,7 @@ const qrcode = require('qrcode-terminal');
 
 let sock = null;
 let lastQr = null; // guarda o QR code mais recente pra exibir como imagem na rota /qr
+const sentMessageIds = new Set(); // IDs das mensagens que a própria secretária enviou (pra não reprocessar como comando)
 
 async function startWhatsApp(onMessage) {
   const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
@@ -31,7 +32,20 @@ async function startWhatsApp(onMessage) {
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0];
-    if (!msg.message || msg.key.fromMe) return;
+    if (!msg.message) return;
+
+    // Ignora o eco das mensagens que a própria secretária acabou de enviar (evita loop infinito)
+    if (sentMessageIds.has(msg.key.id)) {
+      sentMessageIds.delete(msg.key.id);
+      return;
+    }
+
+    const ownJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
+    const isSelfChat = msg.key.remoteJid === ownJid;
+
+    // Mensagens enviadas por você mesmo só viram comando se forem no chat "Mensagens para você mesmo".
+    // Mensagens enviadas por outras pessoas (ex: outro usuário falando com esse número) continuam funcionando normalmente.
+    if (msg.key.fromMe && !isSelfChat) return;
 
     const from = msg.key.remoteJid.replace('@s.whatsapp.net', '');
     const text =
@@ -51,7 +65,8 @@ async function startWhatsApp(onMessage) {
 async function sendMessage(to, text) {
   if (!sock) throw new Error('WhatsApp ainda não conectado.');
   const jid = to.includes('@s.whatsapp.net') ? to : `${to}@s.whatsapp.net`;
-  await sock.sendMessage(jid, { text });
+  const sent = await sock.sendMessage(jid, { text });
+  if (sent?.key?.id) sentMessageIds.add(sent.key.id);
 }
 
 function getLastQr() {
